@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#15161a">
+<title>Outfit · Paletas</title>
+<style>
+:root{--bg:#f3f2ee;--card:#fff;--ink:#1b1c1f;--mut:#6c6f76;--line:#dcdad3;--acc:#1b1c1f;--accink:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#15161a;--card:#1f2126;--ink:#eeeef0;--mut:#9a9da6;--line:#33363d;--acc:#eeeef0;--accink:#15161a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:640px;margin:0 auto;padding:16px 16px 48px}
+h1{font-size:22px;margin:4px 0 14px;letter-spacing:-.01em}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:26px 0 4px}
+.sub{color:var(--mut);font-size:13px;margin:0 0 10px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{flex:1 1 0;min-width:96px;display:flex;align-items:center;justify-content:center;gap:6px;padding:13px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:600;font-size:15px;cursor:pointer;text-align:center}
+.btn.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);flex-basis:100%}
+.btn input[type=file]{display:none}
+.btn input[type=color]{width:26px;height:26px;border:0;padding:0;background:none}
+#photo{display:none;margin-top:12px}
+#cv{width:100%;border-radius:12px;display:block;touch-action:manipulation;cursor:crosshair}
+#base{display:none;align-items:center;gap:14px;margin-top:14px;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+#bsw{width:72px;height:72px;border-radius:10px;border:1px solid var(--line);flex:none}
+#bname{font-weight:700;font-size:18px}
+#bhex{font:13px ui-monospace,Menlo,Consolas,monospace;color:var(--mut)}
+.pal{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;margin-top:10px}
+.pal h3{font-size:14px;margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.pal h3 small{color:var(--mut);font-weight:400}
+.sws{display:flex;gap:6px}
+.sw{flex:1 1 0;min-width:0;border:0;background:none;padding:0;color:inherit;font:inherit;cursor:pointer;text-align:center}
+.sw i{display:block;height:64px;border-radius:9px;border:1px solid var(--line)}
+.sw.me i{outline:2px solid var(--ink);outline-offset:2px}
+.sw span{display:block;font-size:11px;color:var(--mut);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw.me span{color:var(--ink);font-weight:600}
+#more{margin-top:12px;width:100%}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--acc);color:var(--accink);padding:9px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
+footer{color:var(--mut);font-size:12px;margin-top:30px}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<main>
+<h1>Paletas para una prenda</h1>
+<div class="row">
+  <label class="btn pri">Hacer foto a la prenda<input type="file" id="cam" accept="image/*" capture="environment"></label>
+  <label class="btn">Galería<input type="file" id="gal" accept="image/*"></label>
+  <label class="btn">Color a mano <input type="color" id="manual" value="#2f5d8a"></label>
+</div>
+<div id="photo">
+  <canvas id="cv"></canvas>
+  <p class="sub" style="margin-top:6px">Si el color no es el de la prenda, toca sobre ella en la foto.</p>
+</div>
+<div id="base"><div id="bsw"></div><div><div id="bname"></div><div id="bhex"></div></div></div>
+<div id="out"></div>
+<footer>Las combinaciones «del libro» proceden de <em>A Dictionary of Colour Combinations</em> de Sanzo Wada, según la digitalización abierta de <a href="https://github.com/mattdesl/dictionary-of-colour-combinations">mattdesl</a>. Los colores de pantalla son aproximados.</footer>
+</main>
+<div id="toast"></div>
+<script>
+const WADA=[["Hermosa Pink","#f9c1ce",[176,227,273]],["Corinthian Pink","#f8b6ba",[27,43,87,97,128,169,174,206,246,254,264,342]],["Cameo Pink","#e0b3b6",[101,105,116,120,165,231]],["Fawn","#d1b0a7",[18,125,308]],["Light Brown Drab","#b59392",[35,68,185,191,223,239,244,268,285,321]],["Coral Red","#f58e84",[92,123,320,332]],["Fresh Color","#f6917e",[240]],["Grenadine Pink","#f48067",[6,21,112,166,193,201,230,300,315,341]],["Eosine Pink","#f37f94",[34,59,90,108,134,153,197,242,248,276,287,314,327,336]],["Spinel Red","#f27291",[14,147,165,184,195,224,277]],["Old Rose","#d46d7a",[55,162,260,265]],["Eugenia Red | A","#e2625e",[284]],["Eugenia Red | B","#da525d",[17,77,252,262,270,280,282,325]],["Raw Sienna","#bb7125",[3,13,33,70,86,130,131,182,243,247,252,255,268,269,279,293,298,319,327]],["Vinaceous Tawny","#c56127",[40,85,244]],["Jasper Red","#eb5324",[155,194,216,219]],["Spectrum Red","#e31f26",[257,266,301,322]],["Red Orange","#dd4027",[31,164,179,241,264]],["Etruscan Red","#c55347",[25,47,97,137,152,185,275]],["Burnt Sienna","#ae5224",[198,242,263,285,286,297,312,333,343]],["Ochre Red","#ab544d",[199,283]],["Scarlet","#cb2f43",[136,308,332]],["Carmine","#cc1236",[39,117,122,154,225,232,307,313]],["Indian Lake","#c53c69",[299,331]],["Rosolanc Purple","#b73f74",[48,144,170,204,277,346]],["Pomegranite Purple","#b71f57",[220,271]],["Hydrangea Red","#a94151",[142]],["Brick Red","#a84222",[37,108,246,322,328]],["Carmine Red","#a62c37",[35,51,104,130,181,200,221,228,233,237,245,338]],["Pompeian Red","#ab2439",[30,71,120,212,311,324]],["Red","#a72144",[251,261]],["Brown","#7c4226",[110,121,145,161]],["Hay's Russet","#793327",[58,82,95,152,186,231,249,304,314,336,345]],["Vandyke Red","#82241f",[16,133,147,316,335]],["Pansy Purple","#7d133a",[157,273]],["Pale Burnt Lake","#802626",[124,171,177,205,217,258,269,283]],["Violet Red","#642d5e",[9]],["Vistoris Lake","#6d4145",[63,91,165,226,290,337]],["Sulpher Yellow","#f5ecc2",[52,72,80,104,132,135,151,208,246,254,270,294,296,310,315,320,321,326]],["Pale Lemon Yellow","#ffefae",[3,31,60,76,99,109,111,169,185,195,203,228,241,261,272,281,290,292,336]],["Naples Yellow","#fbe6a0",[14,115,166,193,303,325]],["Ivory Buff","#ebd3a2",[11,50,94,102,126,178,184,190,209,214,235,243,262,266,301,343]],["Seashell Pink","#fdd4bd",[45,84,88,113,150,176,194,276,334]],["Light Pinkish Cinnamon","#fcc79b",[317]],["Pinkish Cinnamon","#eeb480",[78,161,175,232,258,263,292,305,310]],["Cinnamon Buff","#fdc57e",[23,127,137,180,210,234,246,323,344]],["Cream Yellow","#fdbf68",[122,192,215,226,267,278,294,295,300,302,304,311,329,342]],["Golden Yellow","#f3a257",[26,81,132,138,140,179,206,229,309,315]],["Vinaceous Cinnamon","#eea78c",[203,205,213,256,260,279,299]],["Ochraceous Salmon","#d8a37b",[32,71,121,186,217,220,223,238,296,339]],["Isabella Color","#c5a56e",[4,12,241,292]],["Maple","#c59f6b",[282]],["Olive Buff","#c1c494",[83,175,200,330,348]],["Ecru","#c2ae93",[167,249,275,279,292,302,317,327]],["Yellow","#fff200",[22,62,68,154,240,251,295,313]],["Lemon Yellow","#f8ed43",[45,123,138,158,168,173,189,210,253,259,289,298,306,317,333]],["Apricot Yellow","#ffdd00",[107,129,163,198,213,247,265,284,305,319]],["Pyrite Yellow","#cab356",[239,250,255,287]],["Olive Ocher","#d6b43e",[66,148,149,156,157,249,278]],["Yellow Ocher","#e2b540",[42,96,118,124,126,191,222,325]],["Orange Yellow","#fcb315",[114,148,153,164,170,257,286,338]],["Yellow Orange","#f99d1b",[2,53,89,151,171,209,222,235,267,288,297,312,319,335]],["Apricot Orange","#f68c50",[211,253,309,328]],["Orange","#f37420",[7,46,141,144,149,256,272]],["Peach Red","#f15a30",[115,250,274,285,298,303,326,340]],["English Red","#d96629",[1,131,190,308,339]],["Cinnamon Rufous","#c27544",[8,10,103,158,172,204,206]],["Orange Rufous","#c16b27",[91,102,222]],["Sulphine Yellow","#c19f2c",[36,65,142,160,252]],["Khaki","#bc892b",[129,146,159,236,248]],["Citron Yellow","#b2b73e",[40,87,145,150,153,196,305,323]],["Citrine","#b09f36",[59,93,132,133,262]],["Buffy Citrine","#96874d",[100,177,233]],["Dark Citrine","#8b835b",[10,41,274,304]],["Light Grayish Olive","#848061",[107,184]],["Krongbergs Green","#84875e",[29]],["Olive","#837e31",[96,201,254,258,277,310,334]],["Orange Citrine","#986f2d",[212,342]],["Sudan Brown","#a36752",[207,214,273]],["Olive Green","#6b7140",[66,243,270,297]],["Light Brownish Olive","#806e4b",[199,318]],["Deep Grayish Olive","#635a3a",[146,343]],["Pale Raw Umber","#71502f",[26,73,160,234,296]],["Sepia","#644b1e",[24,288]],["Madder Brown","#762c19",[28,79,98,173,237,275,323]],["Mars Brown Tobacco","#653514",[19]],["Vandyke Brown","#4b3317",[110,113,118,182,192,328]],["Turquoise Green","#b5decc",[36,74,147,163,173,202,223,230,263,272,285,293,300,305,317,346]],["Glaucous Green","#b4cdc2",[7,150,171,207,239,260]],["Dark Greenish Glaucous","#b7c2a9",[264,311]],["Yellow Green","#afd472",[111,141,276,326,334]],["Light Green Yellow","#c7d14f",[61,289,291,311,346]],["Night Green","#87c540",[19,32,158,326]],["Olive Yellow","#a6a159",[124,211,265,347]],["Artemesia Green","#709390",[293,312]],["Andover Green","#6d7e77",[244,346]],["Rainette Green","#8fa071",[73,162,188,266,301]],["Chromium Green","#719470",[105,200,219,283]],["Pistachio Green","#648f7b",[127,137]],["Sea Green","#00b49b",[17,21,58,86,133,250,260,284,291,340,347]],["Benzol Green","#00978d",[15,54,92,122,155,247,266,267,281,304,306]],["Light Porcelain Green","#00908a",[44,193,328]],["Green","#489b6e",[198,216,293]],["Dull Viridian Green","#009465",[136,256,306,316]],["Oil Green","#819238",[245,299,320]],["Diamine Green","#1a7444",[38,146,217,242,251,313]],["Cossack Green","#437742",[5,135,262,270,278,294,319,341,348]],["Lincoln Green","#555832",[70,121,203,210,280,290]],["Blackish Olive","#42533e",[109,318,336]],["Deep Slate Olive","#253122",[189,229,268,303,310,321,332,341,342,348]],["Nile Blue","#bce4e5",[25,250,268,302,306,330,345]],["Pale King's Blue","#a7d4e4",[16,49,72,75,167,196,213,234,287]],["Light Glaucous Blue","#a5c8d1",[54,93,119,152,178,204,227,320,339,341]],["Salvia Blue","#97acc8",[29,129,135,139,142,188,209,212,237,272,294,321,330]],["Cobalt Green","#96d1aa",[156,188,201,202,230,271,281,282,290,291,308,333]],["Calamine BLue","#78cdd0",[20,41,65,159,176,255,261,287,291,300]],["Venice Green","#62c6bf",[78,128,138,189,283,345]],["Cerulian Blue","#0093a5",[1,63,99,125,148,227,240,264]],["Peacock Blue","#00939b",[131,286]],["Green Blue","#099197",[12,74,79,178,208,252,259,271,330]],["Olympic Blue","#5a82b3",[44,67,157,194,231,274,324]],["Blue","#006eb8",[49,51,88,143,154,186,191,215,257,267,295,333]],["Antwarp Blue","#007190",[85,106,114,140,163,172,208,244,258,281,299,302,334]],["Helvetia Blue","#005b8d",[39,48,161,187,218,259,312,347]],["Dark Medici Blue","#547076",[160,224,241,249]],["Dusky Green","#004f46",[94,219,225,278,284,318,332,338]],["Deep Lyons Blue","#1c4286",[22,38,101,126,179,199,236,247,314,344]],["Violet Blue","#40456a",[75,83,89,98,125,233,286,289,297,309,339]],["Vandar Poel's Blue","#064f6e",[5,77,151,167,168,309,343]],["Dark Tyrian Blue","#12354e",[2,60,67,119,141,245,279]],["Dull Violet Black","#1e0e3f",[95,106,145,265,277,289,295,331]],["Deep Indigo","#051230",[6,28,139,155,182,211,232]],["Deep Slate Green","#112f2c",[84,149,166,271,318,325]],["Grayish Lavender - A","#b5b1d8",[8,15,159,177,218,248,307]],["Grayish Lavender - B","#c0a9b3",[47,56,174,187,235,327,329,338]],["Laelia Pink","#ca92a8",[20,254,280,337]],["Lilac","#b984af",[143,162,282,347]],["Eupatorium Purple","#bf5892",[215,315,322]],["Light Mauve","#9a72aa",[23,80,128,134,180,274,331]],["Aconite Violet","#a36aa5",[43,64,90,187,220,257,269,301,307,324,344]],["Dull Blue Violet","#80719e",[9,100]],["Dark Soft Violet","#66629c",[64,127,197]],["Blue Violet","#6450a1",[116,175,196,322,345]],["Purple Drab","#84565b",[236]],["Deep Violet / Plumbeous","#70727c",[183,192,218]],["Veronia Purple","#8c4c62",[13,24,168,183]],["Dark Slate Purple","#704357",[225,248]],["Taupe Brown","#7a4456",[57,123,174,224,275,280,288]],["Violet Carmine","#713b4c",[337]],["Violet","#4f4086",[42,56,130,156,164,181,205,214,226,316,331,335]],["Red Violet","#59256a",[4,37,134,136,170,172,183,316]],["Cotinga Purple","#501345",[61,181,238,253,307,329,348]],["Dusky Madder Violet","#4e1d4c",[18,50,53,82,103,314]],["White","#ffffff",[55]],["Neutral Gray","#b6bfc1",[34,139,180,195,197,221,228,229,273,303,324,340]],["Mineral Gray","#a2b0ad",[11,30]],["Warm Gray","#a1a39a",[69,76,81,143,169,238,259,261]],["Slate Color","#34454c",[27,33,57,140,202,243,245,251,253,263,296,329,335]],["Black","#111314",[46,52,62,69,112,117,144,190,207,216,221,242,255,256,269,276,288,298,313,323,337,340,344]]];
+const $=s=>document.querySelector(s);
+
+/* ---------- color ---------- */
+const h2r=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const r2h=r=>'#'+r.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+function r2lab([r,g,b]){
+  const f=v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)};
+  r=f(r);g=f(g);b=f(b);
+  let x=(.4124564*r+.3575761*g+.1804375*b)/.95047,y=.2126729*r+.7151522*g+.072175*b,z=(.0193339*r+.119192*g+.9503041*b)/1.08883;
+  const t=v=>v>.008856?Math.cbrt(v):7.787*v+16/116;x=t(x);y=t(y);z=t(z);
+  return [116*y-16,500*(x-y),200*(y-z)];
+}
+function lab2r([L,a,b]){
+  let y=(L+16)/116,x=a/500+y,z=y-b/200;
+  const t=v=>{const c=v*v*v;return c>.008856?c:(v-16/116)/7.787};
+  x=t(x)*.95047;y=t(y);z=t(z)*1.08883;
+  const f=v=>255*(v<=.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-.055);
+  return [f(3.2404542*x-1.5371385*y-.4985314*z),f(-.969266*x+1.8760108*y+.041556*z),f(.0556434*x-.2040259*y+1.0572252*z)];
+}
+const lab=h=>r2lab(h2r(h));
+const lch=([L,a,b])=>[L,Math.hypot(a,b),(Math.atan2(b,a)*180/Math.PI+360)%360];
+function lch2hex(L,C,H){           // baja la saturación hasta que el color exista en pantalla
+  L=Math.max(8,Math.min(96,L));
+  for(let i=0;i<40;i++){
+    const r=lab2r([L,C*Math.cos(H*Math.PI/180),C*Math.sin(H*Math.PI/180)]);
+    if(r.every(v=>v>=-.5&&v<=255.5)||C<1) return r2h(r);
+    C*=.93;
+  }
+  return r2h(lab2r([L,0,0]));
+}
+const dE=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]);
+
+function nombre(hex){
+  const [L,C,H]=lch(lab(hex));
+  if(C<8) return L>90?'Blanco':L>68?'Gris claro':L>38?'Gris':L>18?'Gris oscuro':'Negro';
+  if(C<24&&L>62&&H>50&&H<110) return L>84?'Crudo':'Beige';
+  let n;
+  if(H<18||H>=345) n=L>60?'Rosa':'Granate';
+  else if(H<48) n=L<32?'Burdeos':(L>70?'Rosa salmón':'Rojo');
+  else if(H<78) n=L<50?'Marrón':(C<35?'Camel':'Naranja');
+  else if(H<106) n=L<72?(C<30?'Caqui':'Mostaza'):'Amarillo';
+  else if(H<165) n=C<25&&L<55?'Verde oliva':'Verde';
+  else if(H<215) n='Verde azulado';
+  else if(H<300) n=L<28?'Azul marino':'Azul';
+  else if(H<332) n='Violeta';
+  else n=L>60?'Rosa':'Magenta';
+  if(/Burdeos|Granate|marino|Marrón|Caqui|Crudo|Camel/.test(n)) return n;
+  return n+(L>76?' claro':L<34?' oscuro':'')+(C<20?' apagado':'');
+}
+
+/* ---------- paletas ---------- */
+const NEU={Blanco:'#f4f3ee',Crudo:'#e7dfcf',Beige:'#cbb892',Camel:'#b0895a','Marrón':'#5b4033','Gris claro':'#b9bbbe',Marengo:'#4a4d52',Marino:'#1f2a44',Negro:'#171717',Vaquero:'#4f6a8f',Caqui:'#6f6f4e'};
+const NSETS=[['Blanco','Marino'],['Gris claro','Marengo'],['Crudo','Camel'],['Negro','Blanco'],['Beige','Marrón'],['Vaquero','Blanco'],['Caqui','Crudo'],['Marengo','Negro']];
+const ACC=[['Burdeos','#6d1f2b','Camel'],['Verde botella','#1f4d3a','Crudo'],['Mostaza','#c9992e','Marino'],['Azul','#2f5d8a','Blanco'],['Teja','#b5532f','Beige']];
+
+function paletas(hex){
+  const B=lab(hex),[L,C,H]=lch(B),me={hex,tag:'Tu color',me:1},out=[];
+  const c=(l,ch,h)=>{const x=lch2hex(l,ch,(h+360)%360);return {hex:x,tag:nombre(x)}};
+  const n=k=>({hex:NEU[k],tag:k});
+
+  const neu=NSETS.filter(s=>s.every(k=>dE(B,lab(NEU[k]))>12)).map(s=>({t:s.join(' + '),cs:[me,...s.map(n)]}));
+  out.push({h:'Con neutros',d:'Lo más fácil de llevar: tu color es el protagonista.',ps:neu});
+
+  const tone=[-32,-16,0,16,32].map(d=>({d,l:L+d})).filter(o=>o.d===0||(o.l>10&&o.l<95)).map(o=>o.d===0?me:c(o.l,C*(1-Math.abs(o.d)/110),H));
+  const ps2=[{t:'Mismo color, más claro y más oscuro',cs:tone}];
+  if(C>=14) ps2.push({t:'Versión apagada',cs:[c(Math.max(14,L-24),C*.45,H),me,c(Math.min(92,L+24),C*.4,H)]});
+  out.push({h:'Tono sobre tono',d:'Un solo color en varias intensidades.',ps:ps2});
+
+  if(C<10){
+    out.push({h:'Acentos',d:'Tu color es neutro y admite casi todo. Estos acentos funcionan bien.',ps:ACC.map(a=>({t:a[0]+' + '+a[2],cs:[me,{hex:a[1],tag:a[0]},n(a[2])]}))});
+  }else{
+    const cm=Math.max(18,Math.min(C*.65,38)),lo=L>55?36:30,hi=L>55?78:68,nn=n(L>55?'Marino':'Crudo');
+    out.push({h:'De contraste',d:'Colores opuestos o vecinos, rebajados para que se puedan vestir.',ps:[
+      {t:'Complementario',cs:[me,c(lo,cm,H+180),nn]},
+      {t:'Vecinos (análogos)',cs:[c(Math.max(16,L-18),cm,H-32),me,c(Math.min(90,L+18),cm,H+32)]},
+      {t:'Complementario dividido',cs:[me,c(lo,cm,H+150),c(hi,cm*.8,H+210)]},
+      {t:'Tríada',cs:[me,c(lo,cm,H+120),c(hi,cm*.8,H+240)]}
+    ]});
+  }
+
+  // Libro de Wada: colores del libro más parecidos al tuyo y sus combinaciones
+  const near=WADA.map((w,i)=>({i,d:dE(B,lab(w[1]))})).sort((a,b)=>a.d-b.d);
+  const pick=near.filter((x,k)=>k===0||(k<3&&x.d<22)),seen=new Set(),wp=[];
+  pick.forEach(p=>WADA[p.i][2].forEach(id=>{
+    if(seen.has(id))return;seen.add(id);
+    const cs=WADA.map((w,i)=>({w,i})).filter(o=>o.w[2].includes(id)).map(o=>({hex:o.w[1],tag:o.i===p.i?'≈ Tu color':o.w[0],me:o.i===p.i}));
+    cs.sort((a,b)=>(b.me|0)-(a.me|0));
+    wp.push({t:'Combinación nº '+id,s:cs.length+' colores',cs,d:p.d});
+  }));
+  wp.sort((a,b)=>a.d-b.d||a.cs.length-b.cs.length);
+  const w0=WADA[pick[0].i];
+  out.push({h:'Del libro de Sanzo Wada',d:'Color del libro más parecido al tuyo: '+w0[0]+(pick[0].d>22?' (no hay ninguno muy cercano)':'')+'.',ps:wp,fold:6});
+  return out;
+}
+
+/* ---------- pantalla ---------- */
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(()=>e.classList.remove('on'),1400)}
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function card(p){
+  const d=el('div','pal'),h=el('h3',null,p.t);if(p.s)h.append(el('small',null,p.s));
+  const r=el('div','sws');
+  p.cs.forEach(c=>{
+    const b=el('button','sw'+(c.me?' me':''));b.type='button';b.title=c.hex;
+    const i=el('i');i.style.background=c.hex;b.append(i,el('span',null,c.tag));
+    b.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(c.hex).catch(()=>{});toast(c.tag+' · '+c.hex)};
+    r.append(b);
+  });
+  d.append(h,r);return d;
+}
+function show(hex){
+  hex=hex.toLowerCase();
+  $('#base').style.display='flex';$('#bsw').style.background=hex;$('#bname').textContent=nombre(hex);$('#bhex').textContent=hex;
+  $('#manual').value=hex;
+  try{history.replaceState(null,'','#'+hex.slice(1))}catch(e){}
+  const out=$('#out');out.textContent='';
+  paletas(hex).forEach(s=>{
+    if(!s.ps.length)return;
+    out.append(el('h2',null,s.h),el('p','sub',s.d));
+    s.ps.forEach((p,k)=>{const cd=card(p);if(s.fold&&k>=s.fold)cd.hidden=true,cd.dataset.x=1;out.append(cd)});
+    if(s.fold&&s.ps.length>s.fold){
+      const b=el('button','btn','Ver las '+(s.ps.length-s.fold)+' restantes');b.id='more';b.type='button';
+      b.onclick=()=>{out.querySelectorAll('[data-x]').forEach(x=>x.hidden=false);b.remove()};out.append(b);
+    }
+  });
+}
+
+/* ---------- foto ---------- */
+const cv=$('#cv'),cx=cv.getContext('2d',{willReadFrequently:true});let img=null;
+function draw(mx,my){
+  cx.drawImage(img,0,0,cv.width,cv.height);
+  if(mx==null)return;
+  const r=Math.max(10,cv.width*.035);
+  cx.lineWidth=4;cx.strokeStyle='#000';cx.beginPath();cx.arc(mx,my,r,0,7);cx.stroke();
+  cx.lineWidth=2;cx.strokeStyle='#fff';cx.beginPath();cx.arc(mx,my,r,0,7);cx.stroke();
+}
+function dominante(){               // color más repetido en la zona central de la foto
+  const w=cv.width,h=cv.height,x0=w*.25|0,y0=h*.25|0,d=cx.getImageData(x0,y0,w*.5|0,h*.5|0).data,m=new Map();
+  for(let i=0;i<d.length;i+=16){
+    const k=(d[i]>>4)<<8|(d[i+1]>>4)<<4|d[i+2]>>4;let b=m.get(k);
+    if(!b)m.set(k,b=[0,0,0,0]);b[0]+=d[i];b[1]+=d[i+1];b[2]+=d[i+2];b[3]++;
+  }
+  let best=null;m.forEach(b=>{if(!best||b[3]>best[3])best=b});
+  return r2h([best[0]/best[3],best[1]/best[3],best[2]/best[3]]);
+}
+function punto(x,y){
+  const s=Math.max(4,cv.width*.02|0),d=cx.getImageData(Math.max(0,x-s),Math.max(0,y-s),2*s,2*s).data;let r=0,g=0,b=0,n=0;
+  for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];n++}
+  return r2h([r/n,g/n,b/n]);
+}
+function carga(f){
+  if(!f)return;const u=URL.createObjectURL(f),im=new Image();
+  im.onload=()=>{
+    const k=Math.min(1,900/Math.max(im.width,im.height));cv.width=im.width*k|0;cv.height=im.height*k|0;img=im;
+    $('#photo').style.display='block';draw();const hex=dominante();draw(cv.width/2,cv.height/2);show(hex);
+  };
+  im.onerror=()=>toast('No se pudo abrir la imagen');im.src=u;
+}
+$('#cam').onchange=$('#gal').onchange=e=>{carga(e.target.files[0]);e.target.value=''};
+cv.onclick=e=>{
+  if(!img)return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*cv.width/r.width|0,y=(e.clientY-r.top)*cv.height/r.height|0;
+  draw();const hex=punto(x,y);draw(x,y);show(hex);
+};
+$('#manual').oninput=e=>show(e.target.value);
+if(/^#[0-9a-f]{6}$/i.test(location.hash))show(location.hash);
+</script>
+</body>
+</html>
