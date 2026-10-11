@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#15161a">
+<meta name="robots" content="noindex,nofollow">
 <title>Outfit · Paletas</title>
 <style>
 :root{--bg:#f3f2ee;--card:#fff;--ink:#1b1c1f;--mut:#6c6f76;--line:#dcdad3;--acc:#1b1c1f;--accink:#fff}
@@ -39,10 +40,37 @@ h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)
 #toast.on{opacity:1}
 footer{color:var(--mut);font-size:12px;margin-top:30px}
 footer a{color:inherit}
+main{padding-bottom:96px}
+[hidden]{display:none!important}
+#tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+#tabs button{flex:1;padding:16px 8px;border:0;background:none;color:var(--mut);font-weight:600;font-size:15px;font-family:inherit}
+#tabs button.on{color:var(--ink);box-shadow:inset 0 3px 0 var(--ink)}
+#toast{bottom:76px;z-index:9}
+#save{margin-top:10px;width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{padding:9px 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:14px;font-family:inherit}
+.chip.on{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.g{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:0;overflow:hidden;color:var(--ink);font-family:inherit;text-align:left;min-width:0}
+.g img,.g .blk{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+.g span{display:block;padding:7px 8px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid var(--line);margin-right:6px;vertical-align:-1px}
+.mini{border:1px solid var(--line);background:none;color:var(--ink);border-radius:999px;padding:4px 10px;font-size:12px;font-family:inherit;flex:none}
+dialog{border:0;padding:0;border-radius:16px;background:var(--bg);color:var(--ink);width:min(560px,calc(100vw - 24px));max-height:88vh}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+.box{padding:16px;display:flex;flex-direction:column;gap:8px}
+.box h2{margin:10px 0 0}.box h3{margin:0;font-size:17px}
+.box input{padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:16px;font-family:inherit;margin-top:8px}
+.box .btn{flex:none}
+.ftop{display:flex;align-items:center;gap:12px}
+.ftop img{width:72px;height:72px;object-fit:cover;border-radius:10px}
+.ftop i{width:40px;height:40px;border-radius:8px;border:1px solid var(--line)}
+.btn.dan{color:#c0392b}
 </style>
 </head>
 <body>
 <main>
+<section id="v-pal">
 <h1>Paletas para una prenda</h1>
 <div class="row">
   <label class="btn pri">Hacer foto a la prenda<input type="file" id="cam" accept="image/*" capture="environment"></label>
@@ -54,9 +82,23 @@ footer a{color:inherit}
   <p class="sub" style="margin-top:6px">Si el color no es el de la prenda, toca sobre ella en la foto.</p>
 </div>
 <div id="base"><div id="bsw"></div><div><div id="bname"></div><div id="bhex"></div></div></div>
+<button class="btn pri" id="save" type="button" hidden>Guardar en el armario</button>
 <div id="out"></div>
 <footer>Las combinaciones «del libro» proceden de <em>A Dictionary of Colour Combinations</em> de Sanzo Wada, según la digitalización abierta de <a href="https://github.com/mattdesl/dictionary-of-colour-combinations">mattdesl</a>. Los colores de pantalla son aproximados.</footer>
+</section>
+<section id="v-arm" hidden>
+<h1>Mi armario</h1>
+<p class="sub" id="count"></p>
+<div id="fseason"></div>
+<p class="sub" id="empty"></p>
+<div id="grid"></div>
+<h2>Copia de seguridad</h2>
+<p class="sub">El armario se guarda solo en este navegador. Exporta una copia de vez en cuando.</p>
+<div class="row"><button class="btn" id="exp" type="button">Exportar copia</button><label class="btn">Importar copia<input type="file" id="imp" accept="application/json,.json"></label></div>
+</section>
 </main>
+<nav id="tabs"><button type="button" data-v="pal" class="on">Paletas</button><button type="button" data-v="arm">Armario</button></nav>
+<dialog id="sheet"></dialog>
 <div id="toast"></div>
 <script>
 const WADA=[["Hermosa Pink","#f9c1ce",[176,227,273]],["Corinthian Pink","#f8b6ba",[27,43,87,97,128,169,174,206,246,254,264,342]],["Cameo Pink","#e0b3b6",[101,105,116,120,165,231]],["Fawn","#d1b0a7",[18,125,308]],["Light Brown Drab","#b59392",[35,68,185,191,223,239,244,268,285,321]],["Coral Red","#f58e84",[92,123,320,332]],["Fresh Color","#f6917e",[240]],["Grenadine Pink","#f48067",[6,21,112,166,193,201,230,300,315,341]],["Eosine Pink","#f37f94",[34,59,90,108,134,153,197,242,248,276,287,314,327,336]],["Spinel Red","#f27291",[14,147,165,184,195,224,277]],["Old Rose","#d46d7a",[55,162,260,265]],["Eugenia Red | A","#e2625e",[284]],["Eugenia Red | B","#da525d",[17,77,252,262,270,280,282,325]],["Raw Sienna","#bb7125",[3,13,33,70,86,130,131,182,243,247,252,255,268,269,279,293,298,319,327]],["Vinaceous Tawny","#c56127",[40,85,244]],["Jasper Red","#eb5324",[155,194,216,219]],["Spectrum Red","#e31f26",[257,266,301,322]],["Red Orange","#dd4027",[31,164,179,241,264]],["Etruscan Red","#c55347",[25,47,97,137,152,185,275]],["Burnt Sienna","#ae5224",[198,242,263,285,286,297,312,333,343]],["Ochre Red","#ab544d",[199,283]],["Scarlet","#cb2f43",[136,308,332]],["Carmine","#cc1236",[39,117,122,154,225,232,307,313]],["Indian Lake","#c53c69",[299,331]],["Rosolanc Purple","#b73f74",[48,144,170,204,277,346]],["Pomegranite Purple","#b71f57",[220,271]],["Hydrangea Red","#a94151",[142]],["Brick Red","#a84222",[37,108,246,322,328]],["Carmine Red","#a62c37",[35,51,104,130,181,200,221,228,233,237,245,338]],["Pompeian Red","#ab2439",[30,71,120,212,311,324]],["Red","#a72144",[251,261]],["Brown","#7c4226",[110,121,145,161]],["Hay's Russet","#793327",[58,82,95,152,186,231,249,304,314,336,345]],["Vandyke Red","#82241f",[16,133,147,316,335]],["Pansy Purple","#7d133a",[157,273]],["Pale Burnt Lake","#802626",[124,171,177,205,217,258,269,283]],["Violet Red","#642d5e",[9]],["Vistoris Lake","#6d4145",[63,91,165,226,290,337]],["Sulpher Yellow","#f5ecc2",[52,72,80,104,132,135,151,208,246,254,270,294,296,310,315,320,321,326]],["Pale Lemon Yellow","#ffefae",[3,31,60,76,99,109,111,169,185,195,203,228,241,261,272,281,290,292,336]],["Naples Yellow","#fbe6a0",[14,115,166,193,303,325]],["Ivory Buff","#ebd3a2",[11,50,94,102,126,178,184,190,209,214,235,243,262,266,301,343]],["Seashell Pink","#fdd4bd",[45,84,88,113,150,176,194,276,334]],["Light Pinkish Cinnamon","#fcc79b",[317]],["Pinkish Cinnamon","#eeb480",[78,161,175,232,258,263,292,305,310]],["Cinnamon Buff","#fdc57e",[23,127,137,180,210,234,246,323,344]],["Cream Yellow","#fdbf68",[122,192,215,226,267,278,294,295,300,302,304,311,329,342]],["Golden Yellow","#f3a257",[26,81,132,138,140,179,206,229,309,315]],["Vinaceous Cinnamon","#eea78c",[203,205,213,256,260,279,299]],["Ochraceous Salmon","#d8a37b",[32,71,121,186,217,220,223,238,296,339]],["Isabella Color","#c5a56e",[4,12,241,292]],["Maple","#c59f6b",[282]],["Olive Buff","#c1c494",[83,175,200,330,348]],["Ecru","#c2ae93",[167,249,275,279,292,302,317,327]],["Yellow","#fff200",[22,62,68,154,240,251,295,313]],["Lemon Yellow","#f8ed43",[45,123,138,158,168,173,189,210,253,259,289,298,306,317,333]],["Apricot Yellow","#ffdd00",[107,129,163,198,213,247,265,284,305,319]],["Pyrite Yellow","#cab356",[239,250,255,287]],["Olive Ocher","#d6b43e",[66,148,149,156,157,249,278]],["Yellow Ocher","#e2b540",[42,96,118,124,126,191,222,325]],["Orange Yellow","#fcb315",[114,148,153,164,170,257,286,338]],["Yellow Orange","#f99d1b",[2,53,89,151,171,209,222,235,267,288,297,312,319,335]],["Apricot Orange","#f68c50",[211,253,309,328]],["Orange","#f37420",[7,46,141,144,149,256,272]],["Peach Red","#f15a30",[115,250,274,285,298,303,326,340]],["English Red","#d96629",[1,131,190,308,339]],["Cinnamon Rufous","#c27544",[8,10,103,158,172,204,206]],["Orange Rufous","#c16b27",[91,102,222]],["Sulphine Yellow","#c19f2c",[36,65,142,160,252]],["Khaki","#bc892b",[129,146,159,236,248]],["Citron Yellow","#b2b73e",[40,87,145,150,153,196,305,323]],["Citrine","#b09f36",[59,93,132,133,262]],["Buffy Citrine","#96874d",[100,177,233]],["Dark Citrine","#8b835b",[10,41,274,304]],["Light Grayish Olive","#848061",[107,184]],["Krongbergs Green","#84875e",[29]],["Olive","#837e31",[96,201,254,258,277,310,334]],["Orange Citrine","#986f2d",[212,342]],["Sudan Brown","#a36752",[207,214,273]],["Olive Green","#6b7140",[66,243,270,297]],["Light Brownish Olive","#806e4b",[199,318]],["Deep Grayish Olive","#635a3a",[146,343]],["Pale Raw Umber","#71502f",[26,73,160,234,296]],["Sepia","#644b1e",[24,288]],["Madder Brown","#762c19",[28,79,98,173,237,275,323]],["Mars Brown Tobacco","#653514",[19]],["Vandyke Brown","#4b3317",[110,113,118,182,192,328]],["Turquoise Green","#b5decc",[36,74,147,163,173,202,223,230,263,272,285,293,300,305,317,346]],["Glaucous Green","#b4cdc2",[7,150,171,207,239,260]],["Dark Greenish Glaucous","#b7c2a9",[264,311]],["Yellow Green","#afd472",[111,141,276,326,334]],["Light Green Yellow","#c7d14f",[61,289,291,311,346]],["Night Green","#87c540",[19,32,158,326]],["Olive Yellow","#a6a159",[124,211,265,347]],["Artemesia Green","#709390",[293,312]],["Andover Green","#6d7e77",[244,346]],["Rainette Green","#8fa071",[73,162,188,266,301]],["Chromium Green","#719470",[105,200,219,283]],["Pistachio Green","#648f7b",[127,137]],["Sea Green","#00b49b",[17,21,58,86,133,250,260,284,291,340,347]],["Benzol Green","#00978d",[15,54,92,122,155,247,266,267,281,304,306]],["Light Porcelain Green","#00908a",[44,193,328]],["Green","#489b6e",[198,216,293]],["Dull Viridian Green","#009465",[136,256,306,316]],["Oil Green","#819238",[245,299,320]],["Diamine Green","#1a7444",[38,146,217,242,251,313]],["Cossack Green","#437742",[5,135,262,270,278,294,319,341,348]],["Lincoln Green","#555832",[70,121,203,210,280,290]],["Blackish Olive","#42533e",[109,318,336]],["Deep Slate Olive","#253122",[189,229,268,303,310,321,332,341,342,348]],["Nile Blue","#bce4e5",[25,250,268,302,306,330,345]],["Pale King's Blue","#a7d4e4",[16,49,72,75,167,196,213,234,287]],["Light Glaucous Blue","#a5c8d1",[54,93,119,152,178,204,227,320,339,341]],["Salvia Blue","#97acc8",[29,129,135,139,142,188,209,212,237,272,294,321,330]],["Cobalt Green","#96d1aa",[156,188,201,202,230,271,281,282,290,291,308,333]],["Calamine BLue","#78cdd0",[20,41,65,159,176,255,261,287,291,300]],["Venice Green","#62c6bf",[78,128,138,189,283,345]],["Cerulian Blue","#0093a5",[1,63,99,125,148,227,240,264]],["Peacock Blue","#00939b",[131,286]],["Green Blue","#099197",[12,74,79,178,208,252,259,271,330]],["Olympic Blue","#5a82b3",[44,67,157,194,231,274,324]],["Blue","#006eb8",[49,51,88,143,154,186,191,215,257,267,295,333]],["Antwarp Blue","#007190",[85,106,114,140,163,172,208,244,258,281,299,302,334]],["Helvetia Blue","#005b8d",[39,48,161,187,218,259,312,347]],["Dark Medici Blue","#547076",[160,224,241,249]],["Dusky Green","#004f46",[94,219,225,278,284,318,332,338]],["Deep Lyons Blue","#1c4286",[22,38,101,126,179,199,236,247,314,344]],["Violet Blue","#40456a",[75,83,89,98,125,233,286,289,297,309,339]],["Vandar Poel's Blue","#064f6e",[5,77,151,167,168,309,343]],["Dark Tyrian Blue","#12354e",[2,60,67,119,141,245,279]],["Dull Violet Black","#1e0e3f",[95,106,145,265,277,289,295,331]],["Deep Indigo","#051230",[6,28,139,155,182,211,232]],["Deep Slate Green","#112f2c",[84,149,166,271,318,325]],["Grayish Lavender - A","#b5b1d8",[8,15,159,177,218,248,307]],["Grayish Lavender - B","#c0a9b3",[47,56,174,187,235,327,329,338]],["Laelia Pink","#ca92a8",[20,254,280,337]],["Lilac","#b984af",[143,162,282,347]],["Eupatorium Purple","#bf5892",[215,315,322]],["Light Mauve","#9a72aa",[23,80,128,134,180,274,331]],["Aconite Violet","#a36aa5",[43,64,90,187,220,257,269,301,307,324,344]],["Dull Blue Violet","#80719e",[9,100]],["Dark Soft Violet","#66629c",[64,127,197]],["Blue Violet","#6450a1",[116,175,196,322,345]],["Purple Drab","#84565b",[236]],["Deep Violet / Plumbeous","#70727c",[183,192,218]],["Veronia Purple","#8c4c62",[13,24,168,183]],["Dark Slate Purple","#704357",[225,248]],["Taupe Brown","#7a4456",[57,123,174,224,275,280,288]],["Violet Carmine","#713b4c",[337]],["Violet","#4f4086",[42,56,130,156,164,181,205,214,226,316,331,335]],["Red Violet","#59256a",[4,37,134,136,170,172,183,316]],["Cotinga Purple","#501345",[61,181,238,253,307,329,348]],["Dusky Madder Violet","#4e1d4c",[18,50,53,82,103,314]],["White","#ffffff",[55]],["Neutral Gray","#b6bfc1",[34,139,180,195,197,221,228,229,273,303,324,340]],["Mineral Gray","#a2b0ad",[11,30]],["Warm Gray","#a1a39a",[69,76,81,143,169,238,259,261]],["Slate Color","#34454c",[27,33,57,140,202,243,245,251,253,263,296,329,335]],["Black","#111314",[46,52,62,69,112,117,144,190,207,216,221,242,255,256,269,276,288,298,313,323,337,340,344]]];
@@ -156,10 +198,10 @@ function paletas(hex){
 }
 
 /* ---------- pantalla ---------- */
-function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(()=>e.classList.remove('on'),1400)}
+function toast(t){const e=toast.e||(toast.e=$('#toast'));(sheet.open?sheet:document.body).append(e);e.textContent=t;e.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(()=>e.classList.remove('on'),1400)}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 function card(p){
-  const d=el('div','pal'),h=el('h3',null,p.t);if(p.s)h.append(el('small',null,p.s));
+  const d=el('div','pal'),h=el('h3',null,p.t),m=el('button','mini','Mis prendas');m.type='button';m.onclick=()=>matchSheet(p);h.append(m);
   const r=el('div','sws');
   p.cs.forEach(c=>{
     const b=el('button','sw'+(c.me?' me':''));b.type='button';b.title=c.hex;
@@ -169,8 +211,8 @@ function card(p){
   });
   d.append(h,r);return d;
 }
-function show(hex){
-  hex=hex.toLowerCase();
+function show(hex,foto){
+  hex=hex.toLowerCase();cur={hex,foto:!!foto};$('#save').hidden=false;
   $('#base').style.display='flex';$('#bsw').style.background=hex;$('#bname').textContent=nombre(hex);$('#bhex').textContent=hex;
   $('#manual').value=hex;
   try{history.replaceState(null,'','#'+hex.slice(1))}catch(e){}
@@ -213,16 +255,102 @@ function carga(f){
   if(!f)return;const u=URL.createObjectURL(f),im=new Image();
   im.onload=()=>{
     const k=Math.min(1,900/Math.max(im.width,im.height));cv.width=im.width*k|0;cv.height=im.height*k|0;img=im;
-    $('#photo').style.display='block';draw();const hex=dominante();draw(cv.width/2,cv.height/2);show(hex);
+    $('#photo').style.display='block';draw();const hex=dominante();draw(cv.width/2,cv.height/2);show(hex,1);
   };
   im.onerror=()=>toast('No se pudo abrir la imagen');im.src=u;
 }
 $('#cam').onchange=$('#gal').onchange=e=>{carga(e.target.files[0]);e.target.value=''};
 cv.onclick=e=>{
   if(!img)return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*cv.width/r.width|0,y=(e.clientY-r.top)*cv.height/r.height|0;
-  draw();const hex=punto(x,y);draw(x,y);show(hex);
+  draw();const hex=punto(x,y);draw(x,y);show(hex,1);
 };
 $('#manual').oninput=e=>show(e.target.value);
+
+/* ---------- armario ---------- */
+const TIPOS=['Camiseta','Camisa','Jersey','Sudadera','Chaqueta','Abrigo','Pantalón','Vaquero','Short','Zapatillas','Zapatos','Accesorio'],TEMPS=['Verano','Entretiempo','Invierno'],UMBRAL=22;
+let cur=null,season='',dbp;try{season=localStorage.getItem('season')||''}catch(e){}
+const db=()=>dbp||(dbp=new Promise((ok,ko)=>{const r=indexedDB.open('outfit',1);r.onupgradeneeded=()=>{r.result.createObjectStore('prendas',{keyPath:'id'});r.result.createObjectStore('combos',{keyPath:'id'})};r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)}));
+const tx=(mode,fn)=>db().then(d=>new Promise((ok,ko)=>{const t=d.transaction('prendas',mode),q=fn(t.objectStore('prendas'));t.oncomplete=()=>ok(q&&q.result);t.onerror=t.onabort=()=>ko(t.error)}));
+const todas=()=>tx('readonly',s=>s.getAll()),pon=p=>tx('readwrite',s=>s.put(p)),quita=id=>tx('readwrite',s=>s.delete(id));
+const enTemp=p=>!season||p.temps.includes(season);
+const sheet=$('#sheet');
+function abre(...n){toast.e&&document.body.append(toast.e);sheet.textContent='';const b=el('div','box');b.append(...n);sheet.append(b);if(!sheet.open)sheet.showModal();sheet.scrollTop=0}
+sheet.onclick=e=>{if(e.target===sheet)sheet.close()};
+function chips(opts,sel,multi,cb){
+  const w=el('div','chips');
+  opts.forEach(o=>{const b=el('button','chip'+(sel.has(o)?' on':''),o);b.type='button';
+    b.onclick=()=>{if(multi)sel.has(o)?sel.delete(o):sel.add(o);else{sel.clear();sel.add(o)}
+      [...w.children].forEach((c,i)=>c.classList.toggle('on',sel.has(opts[i])));cb&&cb(sel)};w.append(b)});
+  return w;
+}
+function foto(){
+  if(!cur.foto||!img)return null;
+  const k=Math.min(1,600/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=img.width*k|0;c.height=img.height*k|0;
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.8);
+}
+function form(p,nueva){
+  const tipo=new Set(p.tipo?[p.tipo]:[]),temps=new Set(p.temps),nom=el('input');nom.placeholder='Nombre (opcional)';nom.value=p.nombre||'';nom.maxLength=40;
+  const top=el('div','ftop'),sw=el('i');sw.style.background=p.hex;if(p.foto){const im=el('img');im.src=p.foto;im.alt='';top.append(im)}top.append(sw,el('b',null,nombre(p.hex)));
+  const ok=el('button','btn pri',nueva?'Guardar':'Guardar cambios');ok.id='ok';
+  ok.onclick=async()=>{
+    if(!tipo.size)return toast('Elige el tipo de prenda');if(!temps.size)return toast('Elige al menos una temporada');
+    const q=Object.assign({},p,{tipo:[...tipo][0],temps:TEMPS.filter(t=>temps.has(t)),nombre:nom.value.trim()});
+    try{await pon(q);try{navigator.storage.persist()}catch(e){}sheet.close();toast(nueva?'Guardada en el armario':'Cambios guardados');pinta()}catch(e){toast('No se pudo guardar')}
+  };
+  const extra=[];
+  if(!nueva){
+    const v=el('button','btn','Ver paletas de este color');v.onclick=()=>{sheet.close();vista('pal');$('#photo').style.display='none';img=null;show(p.hex);$('#save').hidden=true;scrollTo(0,0)};
+    const b=el('button','btn dan','Borrar prenda');b.onclick=async()=>{if(!b.dataset.ok){b.dataset.ok=1;b.textContent='Pulsa otra vez para borrar';return}await quita(p.id);sheet.close();toast('Prenda borrada');pinta()};
+    extra.push(v,b);
+  }
+  const c=el('button','btn','Cancelar');c.onclick=()=>sheet.close();
+  abre(top,el('h2',null,'Tipo'),chips(TIPOS,tipo),el('h2',null,'Temporada (puedes marcar varias)'),chips(TEMPS,temps,1),nom,ok,...extra,c);
+}
+$('#save').onclick=()=>form({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),hex:cur.hex,foto:foto(),temps:season?[season]:[],creado:Date.now()},1);
+function mini(p){
+  const b=el('button','g');b.type='button';
+  if(p.foto){const im=el('img');im.src=p.foto;im.alt='';b.append(im)}else{const i=el('i','blk');i.style.background=p.hex;b.append(i)}
+  const s=el('span',null,p.nombre||p.tipo),d=el('i','dot');d.style.background=p.hex;s.prepend(d);b.append(s);b.onclick=()=>form(p);return b;
+}
+function filtro(){return chips(['Todas',...TEMPS],new Set([season||'Todas']),0,s=>{const v=[...s][0];season=v==='Todas'?'':v;try{localStorage.setItem('season',season)}catch(e){}pinta()})}
+async function pinta(){
+  if($('#v-arm').hidden)return;
+  const ps=await todas(),vis=ps.filter(enTemp).sort((a,b)=>b.creado-a.creado),g=$('#grid'),f=$('#fseason');
+  f.textContent='';f.append(filtro());g.textContent='';
+  $('#count').textContent=ps.length+(ps.length===1?' prenda':' prendas')+(season?' · '+vis.length+' de '+season.toLowerCase():'');
+  $('#empty').hidden=vis.length>0;
+  $('#empty').textContent=ps.length?'No tienes prendas de '+season.toLowerCase()+'.':'Aún no hay prendas. Ve a Paletas, haz la foto de una prenda y pulsa «Guardar en el armario».';
+  TIPOS.forEach(t=>{const l=vis.filter(p=>p.tipo===t);if(!l.length)return;const w=el('div','grid');l.forEach(p=>w.append(mini(p)));g.append(el('h2',null,t+' · '+l.length),w)});
+}
+async function matchSheet(p){
+  const ps=(await todas()).filter(enTemp),n=[el('h3',null,p.t+(season?' · '+season:''))],seen=new Set();
+  if(!ps.length)n.push(el('p','sub',season?'No tienes prendas de '+season.toLowerCase()+' en el armario.':'Tu armario está vacío todavía.'));
+  else p.cs.forEach(c=>{
+    if(seen.has(c.hex))return;seen.add(c.hex);
+    const L=lab(c.hex),m=ps.map(g=>({g,d:dE(L,lab(g.hex))})).filter(o=>o.d<=UMBRAL).sort((a,b)=>a.d-b.d);
+    const h=el('h2',null,c.tag),d=el('i','dot');d.style.background=c.hex;h.prepend(d);n.push(h);
+    if(m.length){const w=el('div','grid');m.forEach(o=>w.append(mini(o.g)));n.push(w)}else n.push(el('p','sub','Nada de este color.'));
+  });
+  const x=el('button','btn','Cerrar');x.onclick=()=>sheet.close();n.push(x);abre(...n);
+}
+function vista(v){['pal','arm'].forEach(k=>{$('#v-'+k).hidden=k!==v;$('#tabs [data-v='+k+']').classList.toggle('on',k===v)});if(v==='arm')pinta()}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>vista(b.dataset.v));
+$('#exp').onclick=async()=>{
+  const ps=await todas();if(!ps.length)return toast('No hay nada que exportar');
+  const a=el('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({app:'outfit',v:1,prendas:ps})],{type:'application/json'}));
+  a.download='armario-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();toast('Copia descargada');
+};
+$('#imp').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const j=JSON.parse(await f.text());if(j.app!=='outfit'||!Array.isArray(j.prendas))throw 0;let n=0;
+    for(const p of j.prendas){
+      if(!p||typeof p.id!=='string'||!/^#[0-9a-f]{6}$/i.test(p.hex)||!Array.isArray(p.temps)||!TIPOS.includes(p.tipo))continue;
+      await pon({id:p.id,hex:p.hex.toLowerCase(),tipo:p.tipo,temps:TEMPS.filter(t=>p.temps.includes(t)),nombre:String(p.nombre||'').slice(0,40),foto:typeof p.foto==='string'&&/^data:image\/(jpeg|png|webp);base64,/.test(p.foto)?p.foto:null,creado:+p.creado||Date.now()});n++;
+    }
+    toast(n+' prendas importadas');pinta();
+  }catch(x){toast('Ese archivo no es una copia válida')}
+};
 if(/^#[0-9a-f]{6}$/i.test(location.hash))show(location.hash);
 </script>
 </body>
