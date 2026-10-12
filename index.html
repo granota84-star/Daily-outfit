@@ -66,6 +66,22 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 .ftop img{width:72px;height:72px;object-fit:cover;border-radius:10px}
 .ftop i{width:40px;height:40px;border-radius:8px;border:1px solid var(--line)}
 .btn.dan{color:#c0392b}
+.btn:disabled{opacity:.5}
+.chk{display:flex;align-items:center;gap:8px;margin:10px 0 0}
+.chk input{width:18px;height:18px}
+.fit{display:grid;grid-template-columns:3fr 2fr;gap:8px;margin:8px 0}
+.slot{border:1px dashed var(--mut);border-radius:12px;background:var(--card);padding:0;overflow:hidden;color:var(--mut);font-family:inherit;min-width:0;display:flex;flex-direction:column;text-align:left}
+.slot.lleno{border:1px solid var(--line);color:var(--ink)}
+.slot.vac{aspect-ratio:1;align-items:center;justify-content:center}
+.slot.cur{outline:2px solid var(--ink);outline-offset:1px}
+.slot img,.slot .blk{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+.slot span{font-size:12px;padding:6px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.s-arriba{grid-column:1;grid-row:1}.s-abajo{grid-column:1;grid-row:2}.s-capa{grid-column:2;grid-row:1;align-self:start}.s-pies{grid-column:2;grid-row:2;align-self:end}
+.fit.small{gap:4px;margin:6px 0 0}.fit.small span{display:none}.fit.small .slot{border-radius:8px}
+.strip{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:4px 0}.strip i{flex:1}
+.g.sel{outline:3px solid var(--ink);outline-offset:1px}
+.ocard{display:block;width:100%;text-align:left;color:inherit;font-family:inherit;cursor:pointer}
+.ocard h3 small{color:var(--mut);font-weight:400}
 </style>
 </head>
 <body>
@@ -80,11 +96,14 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 <div id="photo">
   <canvas id="cv"></canvas>
   <p class="sub" style="margin-top:6px">Si el color no es el de la prenda, toca sobre ella en la foto.</p>
+  <div class="row"><button class="btn" id="cutbtn" type="button">Quitar fondo</button><button class="btn" id="undo" type="button" hidden>Ver foto original</button></div>
+  <label class="sub chk"><input type="checkbox" id="autocut" checked> Quitar el fondo automáticamente al hacer la foto</label>
+  <p class="sub" id="cutst" aria-live="polite"></p>
 </div>
 <div id="base"><div id="bsw"></div><div><div id="bname"></div><div id="bhex"></div></div></div>
 <button class="btn pri" id="save" type="button" hidden>Guardar en el armario</button>
 <div id="out"></div>
-<footer>Las combinaciones «del libro» proceden de <em>A Dictionary of Colour Combinations</em> de Sanzo Wada, según la digitalización abierta de <a href="https://github.com/mattdesl/dictionary-of-colour-combinations">mattdesl</a>. Los colores de pantalla son aproximados.</footer>
+<footer>Las combinaciones «del libro» proceden de <em>A Dictionary of Colour Combinations</em> de Sanzo Wada, según la digitalización abierta de <a href="https://github.com/mattdesl/dictionary-of-colour-combinations">mattdesl</a>. El recorte del fondo usa <a href="https://github.com/imgly/background-removal-js">@imgly/background-removal</a> dentro del navegador. Los colores de pantalla son aproximados.</footer>
 </section>
 <section id="v-arm" hidden>
 <h1>Mi armario</h1>
@@ -96,8 +115,15 @@ dialog::backdrop{background:rgba(0,0,0,.55)}
 <p class="sub">El armario se guarda solo en este navegador. Exporta una copia de vez en cuando.</p>
 <div class="row"><button class="btn" id="exp" type="button">Exportar copia</button><label class="btn">Importar copia<input type="file" id="imp" accept="application/json,.json"></label></div>
 </section>
+<section id="v-out" hidden>
+<h1>Mis outfits</h1>
+<p class="sub" id="ocount"></p>
+<div id="oseason"></div>
+<p class="sub" id="oempty"></p>
+<div id="olist"></div>
+</section>
 </main>
-<nav id="tabs"><button type="button" data-v="pal" class="on">Paletas</button><button type="button" data-v="arm">Armario</button></nav>
+<nav id="tabs"><button type="button" data-v="pal" class="on">Paletas</button><button type="button" data-v="arm">Armario</button><button type="button" data-v="out">Outfits</button></nav>
 <dialog id="sheet"></dialog>
 <div id="toast"></div>
 <script>
@@ -201,7 +227,7 @@ function paletas(hex){
 function toast(t){const e=toast.e||(toast.e=$('#toast'));(sheet.open?sheet:document.body).append(e);e.textContent=t;e.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(()=>e.classList.remove('on'),1400)}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 function card(p){
-  const d=el('div','pal'),h=el('h3',null,p.t),m=el('button','mini','Mis prendas');m.type='button';m.onclick=()=>matchSheet(p);h.append(m);
+  const d=el('div','pal'),h=el('h3',null,p.t),m=el('button','mini','Montar outfit');m.type='button';m.onclick=()=>builder(p);h.append(m);
   const r=el('div','sws');
   p.cs.forEach(c=>{
     const b=el('button','sw'+(c.me?' me':''));b.type='button';b.title=c.hex;
@@ -237,13 +263,14 @@ function draw(mx,my){
   cx.lineWidth=4;cx.strokeStyle='#000';cx.beginPath();cx.arc(mx,my,r,0,7);cx.stroke();
   cx.lineWidth=2;cx.strokeStyle='#fff';cx.beginPath();cx.arc(mx,my,r,0,7);cx.stroke();
 }
-function dominante(){               // color más repetido en la zona central de la foto
-  const w=cv.width,h=cv.height,x0=w*.25|0,y0=h*.25|0,d=cx.getImageData(x0,y0,w*.5|0,h*.5|0).data,m=new Map();
+function dominante(){               // color más repetido: en la prenda recortada o, sin recorte, en el centro de la foto
+  const w=cv.width,h=cv.height,a=alpha,x0=a?0:w*.25|0,y0=a?0:h*.25|0,d=cx.getImageData(x0,y0,a?w:w*.5|0,a?h:h*.5|0).data,m=new Map();
   for(let i=0;i<d.length;i+=16){
+    if(a&&a[i>>2]<200)continue;
     const k=(d[i]>>4)<<8|(d[i+1]>>4)<<4|d[i+2]>>4;let b=m.get(k);
     if(!b)m.set(k,b=[0,0,0,0]);b[0]+=d[i];b[1]+=d[i+1];b[2]+=d[i+2];b[3]++;
   }
-  let best=null;m.forEach(b=>{if(!best||b[3]>best[3])best=b});
+  let best=null;m.forEach(b=>{if(!best||b[3]>best[3])best=b});if(!best)return '#888888';
   return r2h([best[0]/best[3],best[1]/best[3],best[2]/best[3]]);
 }
 function punto(x,y){
@@ -254,8 +281,10 @@ function punto(x,y){
 function carga(f){
   if(!f)return;const u=URL.createObjectURL(f),im=new Image();
   im.onload=()=>{
-    const k=Math.min(1,900/Math.max(im.width,im.height));cv.width=im.width*k|0;cv.height=im.height*k|0;img=im;
-    $('#photo').style.display='block';draw();const hex=dominante();draw(cv.width/2,cv.height/2);show(hex,1);
+    const k=Math.min(1,900/Math.max(im.width,im.height));cv.width=im.width*k|0;cv.height=im.height*k|0;orig=img=im;alpha=null;const my=++job;
+    $('#photo').style.display='block';$('#undo').hidden=true;$('#cutbtn').hidden=false;$('#cutst').textContent='';
+    draw();const hex=dominante();draw(cv.width/2,cv.height/2);show(hex,1);
+    if($('#autocut').checked)recorta(my);
   };
   im.onerror=()=>toast('No se pudo abrir la imagen');im.src=u;
 }
@@ -267,11 +296,12 @@ cv.onclick=e=>{
 $('#manual').oninput=e=>show(e.target.value);
 
 /* ---------- armario ---------- */
-const TIPOS=['Camiseta','Camisa','Jersey','Sudadera','Chaqueta','Abrigo','Pantalón','Vaquero','Short','Zapatillas','Zapatos','Accesorio'],TEMPS=['Verano','Entretiempo','Invierno'],UMBRAL=22;
+const TIPOS=['Camiseta','Polo','Camisa','Jersey','Sudadera','Sobrecamisa','Chaqueta','Abrigo','Pantalón','Vaquero','Short','Zapatillas','Zapatos','Accesorio'],TEMPS=['Verano','Entretiempo','Invierno'],UMBRAL=22;
 let cur=null,season='',dbp;try{season=localStorage.getItem('season')||''}catch(e){}
 const db=()=>dbp||(dbp=new Promise((ok,ko)=>{const r=indexedDB.open('outfit',1);r.onupgradeneeded=()=>{r.result.createObjectStore('prendas',{keyPath:'id'});r.result.createObjectStore('combos',{keyPath:'id'})};r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)}));
-const tx=(mode,fn)=>db().then(d=>new Promise((ok,ko)=>{const t=d.transaction('prendas',mode),q=fn(t.objectStore('prendas'));t.oncomplete=()=>ok(q&&q.result);t.onerror=t.onabort=()=>ko(t.error)}));
+const tx=(mode,fn,st='prendas')=>db().then(d=>new Promise((ok,ko)=>{const t=d.transaction(st,mode),q=fn(t.objectStore(st));t.oncomplete=()=>ok(q&&q.result);t.onerror=t.onabort=()=>ko(t.error)}));
 const todas=()=>tx('readonly',s=>s.getAll()),pon=p=>tx('readwrite',s=>s.put(p)),quita=id=>tx('readwrite',s=>s.delete(id));
+const outs=()=>tx('readonly',s=>s.getAll(),'combos'),ponOut=o=>tx('readwrite',s=>s.put(o),'combos'),quitaOut=id=>tx('readwrite',s=>s.delete(id),'combos');
 const enTemp=p=>!season||p.temps.includes(season);
 const sheet=$('#sheet');
 function abre(...n){toast.e&&document.body.append(toast.e);sheet.textContent='';const b=el('div','box');b.append(...n);sheet.append(b);if(!sheet.open)sheet.showModal();sheet.scrollTop=0}
@@ -299,7 +329,7 @@ function form(p,nueva){
   };
   const extra=[];
   if(!nueva){
-    const v=el('button','btn','Ver paletas de este color');v.onclick=()=>{sheet.close();vista('pal');$('#photo').style.display='none';img=null;show(p.hex);$('#save').hidden=true;scrollTo(0,0)};
+    const v=el('button','btn','Ver paletas de este color');v.onclick=()=>{sheet.close();vista('pal');$('#photo').style.display='none';img=orig=alpha=null;job++;show(p.hex);$('#save').hidden=true;scrollTo(0,0)};
     const b=el('button','btn dan','Borrar prenda');b.onclick=async()=>{if(!b.dataset.ok){b.dataset.ok=1;b.textContent='Pulsa otra vez para borrar';return}await quita(p.id);sheet.close();toast('Prenda borrada');pinta()};
     extra.push(v,b);
   }
@@ -307,12 +337,12 @@ function form(p,nueva){
   abre(top,el('h2',null,'Tipo'),chips(TIPOS,tipo),el('h2',null,'Temporada (puedes marcar varias)'),chips(TEMPS,temps,1),nom,ok,...extra,c);
 }
 $('#save').onclick=()=>form({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),hex:cur.hex,foto:foto(),temps:season?[season]:[],creado:Date.now()},1);
-function mini(p){
+function mini(p,fn){
   const b=el('button','g');b.type='button';
   if(p.foto){const im=el('img');im.src=p.foto;im.alt='';b.append(im)}else{const i=el('i','blk');i.style.background=p.hex;b.append(i)}
-  const s=el('span',null,p.nombre||p.tipo),d=el('i','dot');d.style.background=p.hex;s.prepend(d);b.append(s);b.onclick=()=>form(p);return b;
+  const s=el('span',null,p.nombre||p.tipo),d=el('i','dot');d.style.background=p.hex;s.prepend(d);b.append(s);b.onclick=fn||(()=>form(p));return b;
 }
-function filtro(){return chips(['Todas',...TEMPS],new Set([season||'Todas']),0,s=>{const v=[...s][0];season=v==='Todas'?'':v;try{localStorage.setItem('season',season)}catch(e){}pinta()})}
+function filtro(){return chips(['Todas',...TEMPS],new Set([season||'Todas']),0,s=>{const v=[...s][0];season=v==='Todas'?'':v;try{localStorage.setItem('season',season)}catch(e){}pinta();pintaOut()})}
 async function pinta(){
   if($('#v-arm').hidden)return;
   const ps=await todas(),vis=ps.filter(enTemp).sort((a,b)=>b.creado-a.creado),g=$('#grid'),f=$('#fseason');
@@ -322,18 +352,80 @@ async function pinta(){
   $('#empty').textContent=ps.length?'No tienes prendas de '+season.toLowerCase()+'.':'Aún no hay prendas. Ve a Paletas, haz la foto de una prenda y pulsa «Guardar en el armario».';
   TIPOS.forEach(t=>{const l=vis.filter(p=>p.tipo===t);if(!l.length)return;const w=el('div','grid');l.forEach(p=>w.append(mini(p)));g.append(el('h2',null,t+' · '+l.length),w)});
 }
-async function matchSheet(p){
-  const ps=(await todas()).filter(enTemp),n=[el('h3',null,p.t+(season?' · '+season:''))],seen=new Set();
-  if(!ps.length)n.push(el('p','sub',season?'No tienes prendas de '+season.toLowerCase()+' en el armario.':'Tu armario está vacío todavía.'));
-  else p.cs.forEach(c=>{
-    if(seen.has(c.hex))return;seen.add(c.hex);
-    const L=lab(c.hex),m=ps.map(g=>({g,d:dE(L,lab(g.hex))})).filter(o=>o.d<=UMBRAL).sort((a,b)=>a.d-b.d);
-    const h=el('h2',null,c.tag),d=el('i','dot');d.style.background=c.hex;h.prepend(d);n.push(h);
-    if(m.length){const w=el('div','grid');m.forEach(o=>w.append(mini(o.g)));n.push(w)}else n.push(el('p','sub','Nada de este color.'));
+/* ---------- outfits ---------- */
+const SLOTS=[
+  {k:'arriba',n:'Arriba',t:['Camiseta','Polo','Camisa','Jersey','Sudadera']},
+  {k:'abajo',n:'Abajo',t:['Pantalón','Vaquero','Short']},
+  {k:'capa',n:'Sobrecamisa / chaqueta',sn:'Chaqueta',t:['Sobrecamisa','Chaqueta','Abrigo']},
+  {k:'pies',n:'Calzado',t:['Zapatillas','Zapatos']}];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function strip(hx){const s=el('div','strip');hx.forEach(h=>{const i=el('i');i.style.background=h;s.append(i)});return s}
+function fitEl(sel,cur,onSlot,small){
+  const f=el('div','fit'+(small?' small':''));
+  SLOTS.forEach(s=>{
+    const g=sel[s.k],c=el(onSlot?'button':'div','slot s-'+s.k+(g?' lleno':' vac')+(cur===s.k?' cur':''));
+    if(onSlot){c.type='button';c.onclick=()=>onSlot(s.k)}
+    if(g){if(g.foto){const im=el('img');im.src=g.foto;im.alt='';c.append(im)}else{const i=el('i','blk');i.style.background=g.hex;c.append(i)}}
+    c.append(el('span',null,g?(g.nombre||g.tipo):(s.sn||s.n)));f.append(c);
   });
-  const x=el('button','btn','Cerrar');x.onclick=()=>sheet.close();n.push(x);abre(...n);
+  return f;
 }
-function vista(v){['pal','arm'].forEach(k=>{$('#v-'+k).hidden=k!==v;$('#tabs [data-v='+k+']').classList.toggle('on',k===v)});if(v==='arm')pinta()}
+async function builder(p,pre){
+  const ps=(await todas()).filter(enTemp),hexes=[...new Set(p.cs.map(c=>c.hex))],labs=hexes.map(lab),cand={},sel=Object.assign({},pre||{});
+  SLOTS.forEach(s=>cand[s.k]=ps.filter(g=>s.t.includes(g.tipo)).map(g=>{const L=lab(g.hex);return {g,d:Math.min(...labs.map(x=>dE(x,L)))}}).filter(o=>o.d<=UMBRAL).sort((a,b)=>a.d-b.d));
+  let cur=(SLOTS.find(s=>cand[s.k].length)||SLOTS[0]).k;
+  const prev=el('div'),tabs=el('div','chips'),list=el('div');
+  const auto=el('button','btn','Rellenar automáticamente');auto.type='button';
+  const save=el('button','btn pri','Guardar outfit');save.type='button';save.id='gout';
+  const x=el('button','btn','Cerrar');x.type='button';x.onclick=()=>sheet.close();
+  function upd(){
+    prev.textContent='';prev.append(fitEl(sel,cur,k=>{cur=k;upd()}));
+    tabs.textContent='';
+    SLOTS.forEach(s=>{const b=el('button','chip'+(cur===s.k?' on':''),s.n+' · '+cand[s.k].length);b.type='button';b.onclick=()=>{cur=s.k;upd()};tabs.append(b)});
+    list.textContent='';const l=cand[cur];
+    if(!l.length)list.append(el('p','sub',ps.length?'No tienes prendas de este hueco con estos colores'+(season?' para '+season.toLowerCase():'')+'.':'Tu armario está vacío todavía.'));
+    else{const w=el('div','grid');l.forEach(o=>{const m=mini(o.g,()=>{sel[cur]=sel[cur]&&sel[cur].id===o.g.id?undefined:o.g;upd()});if(sel[cur]&&sel[cur].id===o.g.id)m.classList.add('sel');w.append(m)});list.append(w)}
+    save.disabled=!SLOTS.some(s=>sel[s.k]);
+  }
+  auto.onclick=()=>{let n=0;SLOTS.forEach(s=>{if(cand[s.k][0]){sel[s.k]=cand[s.k][0].g;n++}});if(!n)toast('No hay prendas que encajen');upd()};
+  save.onclick=()=>guardarOutfit(p,hexes,sel);
+  abre(el('h3',null,'Outfit · '+p.t+(season?' · '+season:'')),strip(hexes),prev,el('p','sub','Toca un hueco y elige la prenda. Vuelve a tocarla para quitarla.'),tabs,list,auto,save,x);upd();
+}
+function guardarOutfit(p,hexes,sel){
+  const gs=SLOTS.map(s=>sel[s.k]).filter(Boolean);
+  let comun=TEMPS.filter(t=>gs.every(g=>g.temps.includes(t)));if(!comun.length&&season)comun=[season];
+  const t=new Set(comun),nom=el('input');nom.placeholder='Nombre (opcional)';nom.maxLength=40;
+  const ok=el('button','btn pri','Guardar');ok.type='button';ok.id='ok';
+  ok.onclick=async()=>{
+    if(!t.size)return toast('Elige al menos una temporada');
+    const o={id:uid(),nombre:nom.value.trim(),titulo:p.t,paleta:hexes,temps:TEMPS.filter(x=>t.has(x)),prendas:{},creado:Date.now()};
+    SLOTS.forEach(s=>{if(sel[s.k])o.prendas[s.k]=sel[s.k].id});
+    try{await ponOut(o);sheet.close();toast('Outfit guardado');pintaOut()}catch(e){toast('No se pudo guardar')}
+  };
+  const back=el('button','btn','Volver');back.type='button';back.onclick=()=>builder(p,sel);
+  abre(el('h3',null,'Guardar outfit'),strip(hexes),fitEl(sel),el('h2',null,'Temporada'),chips(TEMPS,t,1),nom,ok,back);
+}
+function selDe(o,by){const s={};SLOTS.forEach(x=>{const g=by[o.prendas[x.k]];if(g)s[x.k]=g});return s}
+async function pintaOut(){
+  if($('#v-out').hidden)return;
+  const [os,ps]=await Promise.all([outs(),todas()]),by=Object.fromEntries(ps.map(p=>[p.id,p])),vis=os.filter(enTemp).sort((a,b)=>b.creado-a.creado),L=$('#olist');
+  $('#oseason').textContent='';$('#oseason').append(filtro());L.textContent='';
+  $('#ocount').textContent=os.length+(os.length===1?' outfit':' outfits')+(season?' · '+vis.length+' de '+season.toLowerCase():'');
+  $('#oempty').hidden=vis.length>0;
+  $('#oempty').textContent=os.length?'No tienes outfits de '+season.toLowerCase()+'.':'Aún no has guardado outfits. En Paletas, pulsa «Montar outfit» en una paleta que te guste.';
+  vis.forEach(o=>{
+    const c=el('button','pal ocard'),h=el('h3',null,o.nombre||o.titulo);c.type='button';h.append(el('small',null,o.temps.join(' · ')));
+    c.append(h,strip(o.paleta),fitEl(selDe(o,by),null,null,true));
+    c.onclick=()=>{
+      const del=el('button','btn dan','Borrar outfit');del.type='button';
+      del.onclick=async()=>{if(!del.dataset.ok){del.dataset.ok=1;del.textContent='Pulsa otra vez para borrar';return}await quitaOut(o.id);sheet.close();toast('Outfit borrado');pintaOut()};
+      const x=el('button','btn','Cerrar');x.type='button';x.onclick=()=>sheet.close();
+      abre(el('h3',null,o.nombre||o.titulo),el('p','sub',(o.nombre?o.titulo+' · ':'')+o.temps.join(' · ')),strip(o.paleta),fitEl(selDe(o,by)),del,x);
+    };
+    L.append(c);
+  });
+}
+function vista(v){['pal','arm','out'].forEach(k=>{$('#v-'+k).hidden=k!==v;$('#tabs [data-v='+k+']').classList.toggle('on',k===v)});if(v==='arm')pinta();if(v==='out')pintaOut()}
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>vista(b.dataset.v));
 $('#exp').onclick=async()=>{
   const ps=await todas();if(!ps.length)return toast('No hay nada que exportar');
@@ -351,6 +443,39 @@ $('#imp').onchange=async e=>{
     toast(n+' prendas importadas');pinta();
   }catch(x){toast('Ese archivo no es una copia válida')}
 };
+
+/* ---------- recorte del fondo ---------- */
+const BG_URL='https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm';
+let job=0,orig=null,alpha=null,bg=null;
+try{$('#autocut').checked=localStorage.getItem('autocut')!=='0'}catch(e){}
+$('#autocut').onchange=e=>{try{localStorage.setItem('autocut',e.target.checked?'1':'0')}catch(x){}};
+async function recorta(my){
+  if(!orig)return;my=my||++job;
+  const st=$('#cutst'),btn=$('#cutbtn'),prog={};btn.disabled=true;st.textContent='Quitando el fondo…';
+  try{
+    bg=bg||await import(BG_URL);
+    const s=document.createElement('canvas');s.width=cv.width;s.height=cv.height;s.getContext('2d').drawImage(orig,0,0,s.width,s.height);
+    const blob=await new Promise(r=>s.toBlob(r,'image/jpeg',.92));
+    const out=await bg.removeBackground(blob,{model:'isnet_quint8',output:{format:'image/png'},progress:(k,c,t)=>{
+      if(my!==job)return;
+      if(k.startsWith('fetch:')&&t){prog[k]=[c,t];let a=0,b=0;for(const v of Object.values(prog)){a+=v[0];b+=v[1]}st.textContent='Descargando el modelo (solo la primera vez): '+Math.round(a/b*100)+'%'}
+      else if(k.startsWith('compute'))st.textContent='Quitando el fondo…';
+    }});
+    if(my!==job)return;
+    const bm=await createImageBitmap(out),w=s.width,h=s.height,c=document.createElement('canvas');c.width=w;c.height=h;
+    const x=c.getContext('2d');x.drawImage(bm,0,0,w,h);
+    const d=x.getImageData(0,0,w,h).data,al=new Uint8Array(w*h);let n=0;
+    for(let i=0;i<al.length;i++){al[i]=d[i*4+3];if(al[i]>128)n++}
+    if(n<al.length*.02)throw new Error('vacio');
+    x.globalCompositeOperation='destination-over';x.fillStyle='#fff';x.fillRect(0,0,w,h);
+    if(my!==job)return;
+    img=c;alpha=al;draw();show(dominante(),1);st.textContent='';$('#undo').hidden=false;btn.hidden=true;
+  }catch(e){
+    if(my===job)st.textContent=e&&e.message==='vacio'?'No encontró la prenda en la foto: se queda la original.':'No se pudo quitar el fondo (la primera vez necesita conexión). Se queda la foto original.';
+  }finally{btn.disabled=false}
+}
+$('#cutbtn').onclick=()=>recorta();
+$('#undo').onclick=()=>{job++;img=orig;alpha=null;$('#undo').hidden=true;$('#cutbtn').hidden=false;$('#cutst').textContent='';draw();const h=dominante();draw(cv.width/2,cv.height/2);show(h,1)};
 if(/^#[0-9a-f]{6}$/i.test(location.hash))show(location.hash);
 </script>
 </body>
